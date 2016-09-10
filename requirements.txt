@@ -1,0 +1,6 @@
+pip install praw
+pip install requests
+pip install httplib2
+pip install oauth2client
+pip install schedule
+pip install pytest
