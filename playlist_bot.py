@@ -2,6 +2,7 @@ import schedule, time
 import re
 import os
 import cPickle as pickle
+import argparse
 from praw.helpers import flatten_tree
 from praw.objects import MoreComments
 from connections import reddit, youtube
@@ -19,11 +20,11 @@ def has_video_content(submission):
 
     video_count = 0
     for comment in flat_comments:
-        if type(comment) != MoreComments and comment.score >= 20:
+        if type(comment) != MoreComments and comment.score >= 10:
             links_in_comment = YOUTUBE_REGEX.findall(comment.body)
             if links_in_comment:
                 video_count = video_count + len(links_in_comment)
-        if video_count >= 10:
+        if video_count >= 1:
             return True
     return False
 
@@ -193,5 +194,16 @@ class PlaylistBot(object):
         with open('playlists.p', 'wb') as fp:
             pickle.dump(self.playlists, fp)
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--test", action="store_true")
+args = parser.parse_args()
+
 playlist_bot = PlaylistBot()
-playlist_bot.run()
+if args.test:
+    playlist_bot.add_new_submissions()
+    playlist_bot.remove_old_submissions()
+    playlist_bot.create_playlists()
+    playlist_bot.update_playlists()
+    playlist_bot.save()
+else:
+    playlist_bot.run()
