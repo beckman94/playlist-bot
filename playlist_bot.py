@@ -25,7 +25,7 @@ def has_video_content(submission):
     video_count = 0
     video_threshold = 1
     for comment in flat_comments:
-        if type(comment) != MoreComments and comment.score >= 10:
+        if type(comment) != MoreComments and comment.score >= 5:
             links_in_comment = YOUTUBE_REGEX.findall(comment.body)
             if links_in_comment:
                 logging.debug("found youtube links in a comment")
@@ -127,6 +127,7 @@ class PlaylistBot(object):
 
         schedule.every(3).minutes.do(self.add_new_submissions)
         schedule.every(3).minutes.do(self.remove_old_submissions)
+        schedule.every(6).minutes.do(self.refresh_submissions)
         schedule.every(6).minutes.do(self.create_playlists)
         schedule.every(18).minutes.do(self.update_playlists)
         schedule.every(3).minutes.do(self.save)
@@ -170,12 +171,20 @@ class PlaylistBot(object):
                 self.submissions.remove(submission)
                 logging.info("removing " + submission.title)
 
+    def refresh_submissions(self):
+        """ Update the submission information, which among other things gets the latest comments """
+
+        logging.info("--- EXECUTING FUNCTION REFRESH_SUBMISSIONS FOR CLASS PLAYLISTBOT ---")
+
+        for submission in self.submissions:
+            submission.refresh()
+
     def create_playlists(self):
         """ Called to check all submissions in watchlist to see if they should have a playlist created """
 
         logging.info("--- EXECUTING FUNCTION CREATE_PLAYLISTS FOR CLASS PLAYLISTBOT ---")
 
-        for submission in [s for s in self.submissions if s not in self.playlists.keys() ]:
+        for submission in [s for s in self.submissions if s.name not in self.playlists.keys() ]:
             if has_video_content(submission):
                 new_playlist = self.create_playlist(submission)
                 logging.info("created playlist for: " + submission.title )
@@ -196,7 +205,7 @@ class PlaylistBot(object):
         flat_comments = flatten_tree(all_comments)
 
         for comment in flat_comments:
-            if type(comment) != MoreComments and comment.score >= 10:
+            if type(comment) != MoreComments and comment.score >= 5:
                 links_in_comment = YOUTUBE_REGEX.findall(comment.body)
                 if links_in_comment:
                     youtube_links = youtube_links + links_in_comment
@@ -223,7 +232,7 @@ class PlaylistBot(object):
 
                 # keep a record of yt_links in comments
                 for comment in flat_comments:
-                    if type(comment) != MoreComments and comment.score >= 10:
+                    if type(comment) != MoreComments and comment.score >= 5:
                         links_in_comment = YOUTUBE_REGEX.findall(comment.body)
                         if links_in_comment:
                             youtube_links = youtube_links + links_in_comment
@@ -258,6 +267,7 @@ if __name__ == "__main__":
     if args.run_once:
         playlist_bot.add_new_submissions()
         playlist_bot.remove_old_submissions()
+        playlist_bot.refresh_submissions()
         playlist_bot.create_playlists()
         playlist_bot.update_playlists()
         playlist_bot.save()
