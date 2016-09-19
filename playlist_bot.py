@@ -150,12 +150,18 @@ class PlaylistBot(object):
         timeout = time.time() - 43200
         logging.debug("timeout: " + str(timeout))
 
+        logging.debug("starting main loop for adding new submissions")
+        logging.debug(str(self.submissions))
+        logging.debug(str(self.playlists.keys()))
         for submission in reddit.get_hot_submissions("AskReddit"):
             # if submission meets 'currentness' criteria, add to submissions
+            logging.debug("name:" + submission.name)
+            logging.debug("title:" + submission.title)
             if submission not in self.submissions and submission not in self.playlists.keys():
                 if  timeout < submission.created:
                     self.submissions.append(submission)
                     logging.info("adding " + submission.title)
+        logging.debug("finished adding new submissions")
 
     def remove_old_submissions(self):
         """ Remove old reddit submissions from list of watched submissions """
