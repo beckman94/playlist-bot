@@ -42,7 +42,10 @@ class Playlist(object):
         super(Playlist, self).__init__()
         logging.info("--- INITIALIZING NEW PLAYLIST INSTANCE ---")
         logging.info("submission title: " + submission.title)
-        self.title = submission.title
+        if len(submission.title) <= 60:
+            self.title = submission.title
+        else:
+            self.title = submission.title[0:57] + "..."
         self.description = """
 A playlist for askreddit submission %s
 
