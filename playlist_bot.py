@@ -12,6 +12,9 @@ import logging
 # Regex identifying a youtube link
 YOUTUBE_REGEX = re.compile("(?:https?:\/\/)?(?:www\.)?youtu\.?be(?:\.com)?\/?.*(?:watch|embed)?(?:.*v=|v\/|\/)([\w\-_]+)\&?")
 
+MINIMUM_COMMENT_UPVOTES = 10
+MINIMUM_PLAYLIST_SIZE = 5
+
 def has_video_content(submission):
     """ Return boolean based on whether submission is viable to have a youtube playlist made """
 
@@ -23,14 +26,14 @@ def has_video_content(submission):
     flat_comments = flatten_tree(all_comments)
 
     video_count = 0
-    video_threshold = 1
+
     for comment in flat_comments:
-        if type(comment) != MoreComments and comment.score >= 5:
+        if type(comment) != MoreComments and comment.score >= MINIMUM_COMMENT_UPVOTES:
             links_in_comment = YOUTUBE_REGEX.findall(comment.body)
             if links_in_comment:
                 logging.debug("found youtube links in a comment")
                 video_count = video_count + len(links_in_comment)
-        if video_count >= video_threshold:
+        if video_count >= MINIMUM_PLAYLIST_SIZE:
             logging.debug("video_count greater than threshold: " + str(video_threshold))
             return True
     logging.debug("video_count: " + str(video_count) + " less than threshold: " + str(video_threshold))
@@ -47,13 +50,14 @@ class Playlist(object):
         else:
             self.title = submission.title[0:57] + "..."
         self.description = """
-A playlist for askreddit submission %s
+%s
 
-submission body:
+URL: %s
+
 %s
 
 Created automatically by playlist-bot
-        """ % (submission.url, submission.selftext)
+        """ % (submission.title, submission.url, submission.selftext)
 
         logging.info("using youtube api to insert playlist information")
         playlist_insert_response = youtube.youtube.playlists().insert(
@@ -157,7 +161,7 @@ class PlaylistBot(object):
         logging.debug(str(self.submissions))
         logging.debug(str(self.playlists.keys()))
         for submission in reddit.get_hot_submissions("AskReddit"):
-            # if submission meets 'currentness' criteria, add to submissions
+
             logging.debug("name:" + submission.name)
             logging.debug("title:" + submission.title)
             if submission not in self.submissions and submission not in self.playlists.keys():
@@ -214,7 +218,7 @@ class PlaylistBot(object):
         flat_comments = flatten_tree(all_comments)
 
         for comment in flat_comments:
-            if type(comment) != MoreComments and comment.score >= 5:
+            if type(comment) != MoreComments and comment.score >= MINIMUM_COMMENT_UPVOTES:
                 links_in_comment = YOUTUBE_REGEX.findall(comment.body)
                 if links_in_comment:
                     youtube_links = youtube_links + links_in_comment
@@ -241,7 +245,7 @@ class PlaylistBot(object):
 
                 # keep a record of yt_links in comments
                 for comment in flat_comments:
-                    if type(comment) != MoreComments and comment.score >= 5:
+                    if type(comment) != MoreComments and comment.score >= MINIMUM_COMMENT_UPVOTES:
                         links_in_comment = YOUTUBE_REGEX.findall(comment.body)
                         if links_in_comment:
                             youtube_links = youtube_links + links_in_comment
